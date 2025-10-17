@@ -1,34 +1,25 @@
-# Cursor Snake - Apple Collector
+# Cursor Snake - Apple Collector (Updated)
 
-This is a simple web-based game where the player controls a snake-like cursor to collect apples, while an AI snake also roams the screen. The game features smooth movement, wrap-around edges, and a dynamic speed increase.
+This is a simple JavaScript canvas game where you control a snake-like cursor to collect apples, while an AI snake also tries to navigate the screen. The game features smooth snake movement, screen wrap-around, and increasing difficulty over time.
 
 ## Features:
-
-*   **Player-Controlled Snake:** Guide your snake with the mouse cursor.
-*   **AI Opponent:** An autonomous snake collects apples on its own.
+*   **Player-controlled Snake:** Follows your mouse cursor.
+*   **AI-controlled Snake:** Navigates independently, following random targets.
 *   **Apple Collection:** Collect apples to increase your score and grow your snake.
-*   **Dynamic Speed:** The game speed gradually increases over time, adding challenge.
-*   **Wrap-Around Edges:** Both snakes and apples seamlessly transition from one side of the screen to the other.
-*   **Visual Apple:** Apples are now represented by a graphical icon (a "Google Apple" style image) instead of a simple red circle.
+*   **Dynamic Speed:** Game speed gradually increases over time.
+*   **Screen Wrap-around:** Both snakes and apples seamlessly move from one edge of the screen to the opposite.
+*   **Responsive Design:** Canvas resizes to fill the browser window.
+*   **Updated Apple Logo:** Incorporates a custom "Google apple" image for the apples.
 
 ## How to Play:
-
 1.  Open `index.html` in your web browser.
-2.  Move your mouse cursor around the screen. Your green snake's head will follow.
-3.  Collect the apple icons to score points and make your snake grow longer.
-4.  Currently, there is no collision detection with the red AI snake or the player's own body, focusing on the collection mechanic.
+2.  Move your mouse to control the green player snake.
+3.  Collect the apple (new custom logo) to score points and make your snake grow longer.
+4.  Avoid the red AI snake (currently no collision detection for losing, but adds visual dynamics).
 
-## Development Notes:
+## Development:
+The game is built using pure JavaScript and HTML Canvas API.
 
-*   The game uses plain HTML, CSS, and JavaScript.
-*   Canvas API is used for all game rendering.
-*   The AI snake moves towards randomly generated targets.
-*   The apple graphic is loaded from a public asset URL.
-
-## Future Enhancements:
-
-*   Add collision detection for player vs. AI snake, or player vs. self.
-*   Implement different power-ups or obstacles.
-*   Improve AI behavior.
-*   Add a start/pause screen and game over conditions.
-*   High score tracking.
+### Files:
+*   `index.html`: The main game file containing all HTML, CSS, and JavaScript.
+*   `README.md`: This file.
