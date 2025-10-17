@@ -27,7 +27,7 @@
 
         // Game Constants
         const SEGMENT_SIZE = 12; // Visual size of each snake segment
-        const APPLE_SIZE = 15;   // Visual size of the apple
+        const APPLE_SIZE = 20;   // Visual size of the apple (adjusted for image)
         const INITIAL_SNAKE_LENGTH = 15; // Number of segments
         const INITIAL_SPEED = 250; // Pixels per second
         const SPEED_INCREASE_RATE = 10; // Pixels per second increase per second
@@ -36,6 +36,13 @@
         const AI_TARGET_CHANGE_DIST_SQ = 150 * 150; // Squared distance for AI to pick new target
         const AI_TARGET_LIFESPAN = 5000; // ms, max time for an AI target to stay before picking a new one
         const SCORE_PER_APPLE = 10; // Points awarded for collecting an apple
+
+        // Apple Image Asset
+        const APPLE_IMAGE = new Image();
+        // Using a generic apple icon from Wikimedia Commons as a placeholder for "google apple image"
+        // as no specific attachment was provided. If a specific image URI was attached, it would be used here.
+        APPLE_IMAGE.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Apple_icon_simple.svg/200px-Apple_icon_simple.svg.png';
+        let appleImageLoaded = false;
 
         // Game State
         let playerSnake = [];
@@ -56,6 +63,16 @@
             onResize(); // Set initial canvas size
             window.addEventListener('resize', onResize);
             document.addEventListener('mousemove', onMouseMove);
+
+            // Set onload for the apple image
+            APPLE_IMAGE.onload = () => {
+                appleImageLoaded = true;
+            };
+            // Handle potential error loading image (optional)
+            APPLE_IMAGE.onerror = () => {
+                console.error("Failed to load apple image.");
+                appleImageLoaded = false; // Ensure fallback is used
+            };
 
             // Initialize snakes with a slight offset
             playerSnake = createSnake(WIDTH / 2 - 50, HEIGHT / 2, INITIAL_SNAKE_LENGTH);
@@ -269,10 +286,16 @@
          * @param {{x: number, y: number}} apple - The apple object to draw.
          */
         function drawApple(apple) {
-            CTX.fillStyle = '#FF5722'; // Orange-red color for apple
-            CTX.beginPath();
-            CTX.arc(apple.x, apple.y, APPLE_SIZE / 2, 0, Math.PI * 2);
-            CTX.fill();
+            if (appleImageLoaded) {
+                // Draw the image centered at the apple's x, y
+                CTX.drawImage(APPLE_IMAGE, apple.x - APPLE_SIZE / 2, apple.y - APPLE_SIZE / 2, APPLE_SIZE, APPLE_SIZE);
+            } else {
+                // Fallback to drawing a circle if image not loaded
+                CTX.fillStyle = '#FF5722'; // Orange-red color for apple
+                CTX.beginPath();
+                CTX.arc(apple.x, apple.y, APPLE_SIZE / 2, 0, Math.PI * 2);
+                CTX.fill();
+            }
         }
 
         /**
