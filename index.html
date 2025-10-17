@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursor Snake</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            cursor: none; /* Hide default cursor */
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const CANVAS = document.getElementById('gameCanvas');
+        const CTX = CANVAS.getContext('2d');
+
+        let WIDTH, HEIGHT;
+
+        // Game Constants
+        const SEGMENT_SIZE = 12; // Visual size of each segment
+        const INITIAL_SNAKE_LENGTH = 15; // Number of segments
+        const INITIAL_SPEED = 250; // Pixels per second
+        const SPEED_INCREASE_RATE = 10; // Pixels per second increase per second
+        const FOLLOW_FACTOR = 0.08; // How "tightly" segments follow the previous one (0.01-0.2 usually)
+        const AI_SPEED_FACTOR = 0.9; // AI snake speed relative to player
+        const AI_TARGET_CHANGE_DIST_SQ = 150 * 150; // Squared distance for AI to pick new target
+        const AI_TARGET_LIFESPAN = 5000; // ms, max time for an AI target to stay before picking a new one
+
+        // Game State
+        let playerSnake = [];
+        let aiSnake = [];
+        let cursorPos = { x: 0, y: 0 };
+        let gameSpeed = INITIAL_SPEED;
+        let lastFrameTime = 0;
+        let gameStartTime = 0;
+        let aiTarget = { x: 0, y: 0 };
+        let aiTargetSetTime = 0;
+
+        /**
+         * Initializes the game. Sets up canvas, snakes, and event listeners.
+         */
+        function init() {
+            onResize(); // Set initial canvas size
+            window.addEventListener('resize', onResize);
+            document.addEventListener('mousemove', onMouseMove);
+
+            // Initialize snakes with a slight offset
+            playerSnake = createSnake(WIDTH / 2 - 50, HEIGHT / 2, INITIAL_SNAKE_LENGTH);
+            aiSnake = createSnake(WIDTH / 2 + 50, HEIGHT / 2, INITIAL_SNAKE_LENGTH);
+
+            // Set initial game time and AI target
+            gameStartTime = performance.now();
+            setNewAITarget();
+
+            // Start the game loop
+            requestAnimationFrame(gameLoop);
+        }
+
+        /**
+         * Creates a new snake with specified starting position and length.
+         * @param {number} startX - X coordinate for the head.
+         * @param {number} startY - Y coordinate for the head.
+         * @param {number} length - Number of segments.
+         * @returns {Array<{x: number, y: number}>} - Array of snake segments.
+         */
+        function createSnake(startX, startY, length) {
+            const snake = [];
+            for (let i = 0; i < length; i++) {
+                // Initial offset for visual separation between segments
+                snake.push({ x: startX - i * SEGMENT_SIZE * 0.8, y: startY });
+            }
+            return snake;
+        }
+
+        /**
+         * Main game loop, called on each animation frame.
+         * @param {DOMHighResTimeStamp} currentTime - Current time provided by requestAnimationFrame.
+         */
+        function gameLoop(currentTime) {
+            if (!lastFrameTime) {
+                lastFrameTime = currentTime;
+            }
+            const deltaTime = (currentTime - lastFrameTime) / 1000; // Time in seconds
+            lastFrameTime = currentTime;
+
+            const elapsedTime = (currentTime - gameStartTime) / 1000; // Time in seconds since game start
+            gameSpeed = INITIAL_SPEED + elapsedTime * SPEED_INCREASE_RATE;
+
+            // Update Player Snake (head follows cursor)
+            moveSnakeHead(playerSnake, cursorPos.x, cursorPos.y, deltaTime, 1.0);
+            updateSnakeSegments(playerSnake);
+
+            // Update AI Snake (head follows random targets)
+            const aiHead = aiSnake[0];
+            const distToAITargetSq = (aiTarget.x - aiHead.x) ** 2 + (aiTarget.y - aiHead.y) ** 2;
+            if (distToAITargetSq < AI_TARGET_CHANGE_DIST_SQ || (currentTime - aiTargetSetTime) > AI_TARGET_LIFESPAN) {
+                setNewAITarget(); // Pick a new target if reached or timed out
+            }
+            moveSnakeHead(aiSnake, aiTarget.x, aiTarget.y, deltaTime, AI_SPEED_FACTOR);
+            updateSnakeSegments(aiSnake);
+
+            draw(); // Redraw everything
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        /**
+         * Moves the head of a snake towards a target position, handling screen wrap-around.
+         * @param {Array<{x: number, y: number}>} snake - The snake to move.
+         * @param {number} targetX - X coordinate of the target.
+         * @param {number} targetY - Y coordinate of the target.
+         * @param {number} dt - Delta time in seconds.
+         * @param {number} speedMultiplier - Multiplier for the current game speed.
+         */
+        function moveSnakeHead(snake, targetX, targetY, dt, speedMultiplier) {
+            let head = snake[0];
+            const actualMoveDistance = gameSpeed * dt * speedMultiplier;
+
+            // Calculate dx, dy considering wrap-around for the shortest path
+            let dx = targetX - head.x;
+            let dy = targetY - head.y;
+
+            if (Math.abs(dx) > WIDTH / 2) {
+                dx = (targetX > head.x) ? dx - WIDTH : dx + WIDTH;
+            }
+            if (Math.abs(dy) > HEIGHT / 2) {
+                dy = (targetY > head.y) ? dy - HEIGHT : dy + HEIGHT;
+            }
+            
+            let distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 0) {
+                // Ensure the snake doesn't overshoot the target if it's very close
+                const moveAmount = Math.min(distance, actualMoveDistance);
+                head.x += (dx / distance) * moveAmount;
+                head.y += (dy / distance) * moveAmount;
+            }
+
+            // Apply wrap-around to head position directly after movement
+            if (head.x < 0) head.x += WIDTH;
+            if (head.x > WIDTH) head.x -= WIDTH;
+            if (head.y < 0) head.y += HEIGHT;
+            if (head.y > HEIGHT) head.y -= HEIGHT;
+        }
+
+        /**
+         * Updates the positions of snake segments to smoothly follow the preceding segment.
+         * Handles wrap-around for smooth following across screen edges.
+         * @param {Array<{x: number, y: number}>} snake - The snake whose segments to update.
+         */
+        function updateSnakeSegments(snake) {
+            for (let i = 1; i < snake.length; i++) {
+                const prev = snake[i - 1];
+                const curr = snake[i];
+
+                let dx = prev.x - curr.x;
+                let dy = prev.y - curr.y;
+
+                // Adjust dx, dy for shortest path considering wrap-around
+                if (Math.abs(dx) > WIDTH / 2) {
+                    dx = (prev.x > curr.x) ? dx - WIDTH : dx + WIDTH;
+                }
+                if (Math.abs(dy) > HEIGHT / 2) {
+                    dy = (prev.y > curr.y) ? dy - HEIGHT : dy + HEIGHT;
+                }
+
+                // Apply a fraction of the distance for smooth, spring-like following
+                curr.x += dx * FOLLOW_FACTOR;
+                curr.y += dy * FOLLOW_FACTOR;
+
+                // Ensure segments also wrap around after movement
+                if (curr.x < 0) curr.x += WIDTH;
+                if (curr.x > WIDTH) curr.x -= WIDTH;
+                if (curr.y < 0) curr.y += HEIGHT;
+                if (curr.y > HEIGHT) curr.y -= HEIGHT;
+            }
+        }
+
+        /**
+         * Sets a new random target for the AI snake within canvas bounds.
+         */
+        function setNewAITarget() {
+            aiTarget.x = Math.random() * WIDTH;
+            aiTarget.y = Math.random() * HEIGHT;
+            aiTargetSetTime = performance.now();
+        }
+
+        /**
+         * Draws all game elements on the canvas.
+         */
+        function draw() {
+            // Clear canvas
+            CTX.clearRect(0, 0, WIDTH, HEIGHT);
+
+            // Draw Player Snake (Green)
+            drawSnake(playerSnake, '#4CAF50'); // Green
+
+            // Draw AI Snake (Red)
+            drawSnake(aiSnake, '#F44336'); // Red
+
+            // Draw a subtle dot for the AI target (optional, for debugging/visualizing AI intent)
+            // CTX.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            // CTX.beginPath();
+            // CTX.arc(aiTarget.x, aiTarget.y, SEGMENT_SIZE / 2, 0, Math.PI * 2);
+            // CTX.fill();
+        }
+
+        /**
+         * Draws a single snake composed of circular segments.
+         * @param {Array<{x: number, y: number}>} snake - The snake to draw.
+         * @param {string} color - The color of the snake.
+         */
+        function drawSnake(snake, color) {
+            CTX.fillStyle = color;
+            snake.forEach((segment, index) => {
+                CTX.beginPath();
+                // Make head slightly larger for visual distinction
+                const currentSegmentSize = (index === 0) ? SEGMENT_SIZE * 1.2 : SEGMENT_SIZE;
+                CTX.arc(segment.x, segment.y, currentSegmentSize / 2, 0, Math.PI * 2);
+                CTX.fill();
+            });
+        }
+
+        /**
+         * Handles mouse movement to update the player snake's target position.
+         * @param {MouseEvent} event - The mouse event.
+         */
+        function onMouseMove(event) {
+            cursorPos.x = event.clientX;
+            cursorPos.y = event.clientY;
+        }
+
+        /**
+         * Handles window resize events to adjust canvas dimensions to fill the screen.
+         */
+        function onResize() {
+            WIDTH = window.innerWidth;
+            HEIGHT = window.innerHeight;
+            CANVAS.width = WIDTH;
+            CANVAS.height = HEIGHT;
+        }
+
+        // Initialize the game when the script loads
+        init();
+    </script>
+</body>
+</html>
