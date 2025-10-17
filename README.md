@@ -1,29 +1,29 @@
-# Cursor Snake
+# Cursor Snake - Apple Collector
 
-A simple, single-file web application featuring a smooth, cursor-following snake and an autonomous AI snake that gradually increases in speed over time. Both snakes wrap around the screen edges for continuous movement.
+This is a simple canvas-based game where the player controls a snake with their mouse, collecting apples to grow and score points, while avoiding or competing with an AI-controlled snake.
 
-## How to Use
+## Features:
 
-1.  **Save the file:** Save the provided `index.html` content into a file named `index.html` on your computer.
-2.  **Open in browser:** Open the `index.html` file using any modern web browser (e.g., Chrome, Firefox, Safari).
-3.  **Play:** Move your mouse cursor around the screen to control the green snake. Observe the red AI snake moving independently. The game speed will continuously increase, making the snakes move faster.
+*   **Player Control:** Your snake follows your cursor, providing direct and intuitive control.
+*   **AI Opponent:** An autonomous AI snake navigates the canvas, following random targets.
+*   **Dynamic Speed:** The game's overall speed gradually increases over time, adding challenge.
+*   **Smooth Animations:** Physics-based segment following and `requestAnimationFrame` ensure fluid and responsive movement for both snakes.
+*   **Screen Wrap-around:** Both snakes seamlessly pass through screen edges, reappearing on the opposite side.
+*   **Apple Collection:** Collect randomly spawned apples to extend your snake's length.
+*   **Gaming Points:** Earn points for each apple collected, displayed prominently on the screen.
 
-## Code Explanation
+## How to Play:
 
-This project is a single-file HTML application (`index.html`) using vanilla JavaScript for all game logic and canvas rendering.
+1.  Move your mouse cursor around the screen. Your green snake will follow.
+2.  Guide your snake to collect the red apples that appear randomly.
+3.  Each apple collected will increase your score and make your snake grow longer.
+4.  Watch out for the red AI snake! While it doesn't directly harm you, it's also moving around.
 
-*   **HTML Structure:** A minimal HTML document containing a single `<canvas>` element, which serves as the drawing surface for the game.
-*   **CSS Styling:** Basic CSS embedded in the `<style>` tags ensures the canvas fills the entire browser window and hides the default mouse cursor for a more immersive experience.
-*   **JavaScript Logic:**
-    *   **Game Loop (`gameLoop`):** Uses `requestAnimationFrame` for smooth, frame-rate independent animation. It calculates `deltaTime` to ensure consistent movement regardless of system performance.
-    *   **Snakes:** Each snake is represented as an array of `{x, y}` objects (segments).
-    *   **Player Snake Control:** The head of the player's green snake constantly moves towards the current mouse cursor position.
-    *   **AI Snake Logic:** The red AI snake's head moves towards randomly generated target points on the screen. It picks a new target when it gets close to its current one or after a certain time has passed.
-    *   **Smooth Following:** Each segment of both snakes smoothly interpolates its position towards the segment directly in front of it using a `FOLLOW_FACTOR`, creating a fluid, "spring-like" trailing effect.
-    *   **Speed Increase:** The `gameSpeed` variable gradually increases based on the elapsed time since the game started, making the game progressively faster and more challenging.
-    *   **Screen Wrap-Around:** Both snake heads and their segments handle screen boundaries by wrapping around to the opposite side, allowing continuous movement. This is implemented with shortest-path calculations to maintain visual smoothness.
-    *   **Drawing:** The `draw` function clears the canvas and then renders each snake as a series of connected circles, with the head being slightly larger.
+## Technical Details:
 
-## License
-
-This project is licensed under the MIT License.
+*   Developed using plain HTML, CSS, and JavaScript.
+*   Utilizes the Canvas API for all game rendering.
+*   `requestAnimationFrame` is used for the main game loop, ensuring smooth animations synchronized with the browser's refresh rate.
+*   Movement and following mechanics are based on delta time, ensuring consistent speed across different frame rates.
+*   Collision detection is implemented for the player snake and apples.
+*   The AI snake uses a simple random target selection mechanism, with targets changing periodically or upon reaching the current target.
