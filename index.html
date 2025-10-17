@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cursor Snake</title>
+    <title>Cursor Snake - Apple Collector</title>
     <style>
         body {
             margin: 0;
@@ -26,7 +26,8 @@
         let WIDTH, HEIGHT;
 
         // Game Constants
-        const SEGMENT_SIZE = 12; // Visual size of each segment
+        const SEGMENT_SIZE = 12; // Visual size of each snake segment
+        const APPLE_SIZE = 15;   // Visual size of the apple
         const INITIAL_SNAKE_LENGTH = 15; // Number of segments
         const INITIAL_SPEED = 250; // Pixels per second
         const SPEED_INCREASE_RATE = 10; // Pixels per second increase per second
@@ -34,10 +35,13 @@
         const AI_SPEED_FACTOR = 0.9; // AI snake speed relative to player
         const AI_TARGET_CHANGE_DIST_SQ = 150 * 150; // Squared distance for AI to pick new target
         const AI_TARGET_LIFESPAN = 5000; // ms, max time for an AI target to stay before picking a new one
+        const SCORE_PER_APPLE = 10; // Points awarded for collecting an apple
 
         // Game State
         let playerSnake = [];
         let aiSnake = [];
+        let apple = { x: 0, y: 0 }; // Position of the apple
+        let score = 0; // Player's score
         let cursorPos = { x: 0, y: 0 };
         let gameSpeed = INITIAL_SPEED;
         let lastFrameTime = 0;
@@ -46,7 +50,7 @@
         let aiTargetSetTime = 0;
 
         /**
-         * Initializes the game. Sets up canvas, snakes, and event listeners.
+         * Initializes the game. Sets up canvas, snakes, apple, and event listeners.
          */
         function init() {
             onResize(); // Set initial canvas size
@@ -57,9 +61,10 @@
             playerSnake = createSnake(WIDTH / 2 - 50, HEIGHT / 2, INITIAL_SNAKE_LENGTH);
             aiSnake = createSnake(WIDTH / 2 + 50, HEIGHT / 2, INITIAL_SNAKE_LENGTH);
 
-            // Set initial game time and AI target
+            // Set initial game time, AI target, and apple position
             gameStartTime = performance.now();
             setNewAITarget();
+            spawnApple(); // Place the first apple
 
             // Start the game loop
             requestAnimationFrame(gameLoop);
@@ -107,6 +112,20 @@
             }
             moveSnakeHead(aiSnake, aiTarget.x, aiTarget.y, deltaTime, AI_SPEED_FACTOR);
             updateSnakeSegments(aiSnake);
+
+            // Check for apple collision with player snake
+            const playerHead = playerSnake[0];
+            const distToAppleSq = (apple.x - playerHead.x) ** 2 + (apple.y - playerHead.y) ** 2;
+            // Collision threshold: sum of radii squared
+            const collisionThresholdSq = ((SEGMENT_SIZE / 2) + (APPLE_SIZE / 2)) ** 2;
+
+            if (distToAppleSq < collisionThresholdSq) {
+                score += SCORE_PER_APPLE;
+                // Add a new segment to the snake at the position of the last segment
+                const lastSegment = playerSnake[playerSnake.length - 1];
+                playerSnake.push({ x: lastSegment.x, y: lastSegment.y });
+                spawnApple(); // Respawn the apple
+            }
 
             draw(); // Redraw everything
 
@@ -195,6 +214,15 @@
         }
 
         /**
+         * Places the apple at a new random position on the canvas.
+         */
+        function spawnApple() {
+            // Ensure apple spawns slightly away from edges
+            apple.x = Math.random() * (WIDTH - APPLE_SIZE * 2) + APPLE_SIZE;
+            apple.y = Math.random() * (HEIGHT - APPLE_SIZE * 2) + APPLE_SIZE;
+        }
+
+        /**
          * Draws all game elements on the canvas.
          */
         function draw() {
@@ -206,6 +234,12 @@
 
             // Draw AI Snake (Red)
             drawSnake(aiSnake, '#F44336'); // Red
+
+            // Draw the Apple
+            drawApple(apple);
+
+            // Draw the Score
+            drawScore();
 
             // Draw a subtle dot for the AI target (optional, for debugging/visualizing AI intent)
             // CTX.fillStyle = 'rgba(255, 255, 255, 0.2)';
@@ -228,6 +262,27 @@
                 CTX.arc(segment.x, segment.y, currentSegmentSize / 2, 0, Math.PI * 2);
                 CTX.fill();
             });
+        }
+
+        /**
+         * Draws the apple on the canvas.
+         * @param {{x: number, y: number}} apple - The apple object to draw.
+         */
+        function drawApple(apple) {
+            CTX.fillStyle = '#FF5722'; // Orange-red color for apple
+            CTX.beginPath();
+            CTX.arc(apple.x, apple.y, APPLE_SIZE / 2, 0, Math.PI * 2);
+            CTX.fill();
+        }
+
+        /**
+         * Draws the current score on the canvas.
+         */
+        function drawScore() {
+            CTX.fillStyle = '#FFFFFF'; // White text
+            CTX.font = '24px Arial';
+            CTX.textAlign = 'left';
+            CTX.fillText(`Score: ${score}`, 10, 30); // Top-left corner
         }
 
         /**
